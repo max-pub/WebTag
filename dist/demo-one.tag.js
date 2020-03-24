@@ -1,0 +1,152 @@
+import test from './import.js';
+    import './show-name.tag.js';
+console.log('loaded', import.meta);
+const XSL = new DOMParser().parseFromString(`<?xml version="1.0"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:template match='/'>
+        <show-name>
+            <xsl:copy-of select=".//author" />
+        </show-name>
+        <h2>
+            <xsl:value-of select='.//title' />
+        </h2>
+        <input id='date' type='date' value='2020-01-01' /> <button on-tap='add7'>+7</button><br />
+
+        <br />
+        change title: <b contenteditable='true' on-tap='showAuthor'>
+            <xsl:value-of select='.//title' />
+        </b>
+    </xsl:template>
+</xsl:stylesheet>
+`, 'text/xml');
+//importXSL import XSL from './xsl.js';
+// console.log("XSL",XSL);
+const XSLT = new XSLTProcessor();
+XSLT.importStylesheet(XSL);
+
+const CSS = document.createTextNode(`b {
+        font-size: 20px;
+    }
+
+    :host {
+        display: block;
+    }`);
+//importCSS import CSS from './css.js';
+let STYLE = document.createElement('style');
+STYLE.appendChild(CSS);
+
+window.customElements.define('demo-one', class extends HTMLElement {
+    constructor() {
+        super();
+        // console.log('constructor', this.innerHTML);
+        this.attachShadow({ mode: 'open', delegatesFocus: true });
+
+        this.xmlObserver = new MutationObserver(e => this.applyXSLT()).observe(this, { attributes: true, characterData: true, childList: true, subtree: true });
+        // window.addEventListener('load', () => this.applyXSLT());
+
+        //[shadowChange
+        this.htmlObserver = new MutationObserver(event => this.shadowChange(event[0].target.parentNode, event[0].target.textContent)).observe(this.shadowRoot, { characterData: true, subtree: true });
+        this.shadowRoot.addEventListener('change', event => this.shadowChange(event.target, event.target.value))
+        //shadowChange]
+
+        //[TAP
+        this.addEventListener('click', event => {
+            try {
+                let target = event.composedPath()[0];
+                let action = target.closest('[on-tap]')
+                this[action.getAttribute('on-tap')](action, event, target)
+            }
+            catch (x) { if (this.DEBUG) console.error(event, x, event.composedPath()) }
+        });
+        //TAP]
+
+        //[INIT
+        this.INIT();
+        //INIT]
+    }
+    connectedCallback() {
+        // console.log('constructor', this.innerHTML);
+
+        this.applyXSLT()
+        
+    }
+
+    set data(d) {
+        this.appendChild(new DOMParser().parseFromString(d, 'text/xml').firstChild);
+    }
+
+
+    applyXSLT() {
+        window.requestAnimationFrame(t => {
+            let R = this.shadowRoot;
+            // console.log('root', R, this);
+            // https://jsperf.com/innerhtml-vs-removechild/15
+            while (R.lastChild)
+                R.removeChild(R.lastChild);
+
+            R.appendChild(STYLE.cloneNode(true));
+            let xml = navigator.userAgent.includes('Firefox') ? new DOMParser().parseFromString(this.outerHTML, 'text/html') : this; // firefox bug... needs to reparse html
+            R.appendChild(XSLT.transformToFragment(xml, document));
+        });
+    }
+    // R.innerHTML = '';
+    // this.shadowRoot.innerHTML = `<link rel="stylesheet" href="${import.meta.url.slice(0, -3)}.css">`/// + new XMLSerializer().serializeToString(output);
+    // console.log('output',new XMLSerializer().serializeToString( XSLT.transformToFragment(this, document)));
+
+
+    $(q) { return this.shadowRoot.querySelector(q) }
+
+    $$(q) { return this.shadowRoot.querySelectorAll(q) } // triple $ because of js replace...
+
+
+
+
+
+
+    //[EVENT
+    event(name, options) {
+        this.dispatchEvent(new CustomEvent(name, {
+            bubbles: true,
+            composed: true,
+            cancelable: true,
+            detail: options
+        }));
+    }
+    //EVENT]
+
+
+
+    //[WATCH
+    static get observedAttributes() { return ['id']; }
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (newValue != oldValue) this[name] = newValue
+    }
+    //WATCH]
+
+
+
+
+// }); // will be appended later
+
+
+        INIT() {
+            console.log('init', test);
+        }
+        showAuthor(node) {
+            console.log(node.innerText);
+        }
+        shadowChange(node, value) {
+            console.log('this changed:', node, value);
+        }
+        add7(node) {
+            let d = new Date(Date.parse(this.$('#date').value));
+            console.log(this.$('#date').value);
+            d.setDate(d.getDate() + 7);
+            console.log(d);
+            // this.$('#date').value = d;
+            this.$('#date').value = d.toISOString().substr(0, 10);
+            this.event('jo')
+            // this.$('#date').dispatchEvent(new Event('change'));
+        }
+        set id(v) { console.log('id', v) }
+    });

@@ -1,0 +1,56 @@
+<template>
+    <xsl:template match='/'>
+        <show-name>
+            <xsl:copy-of select=".//author" />
+        </show-name>
+        <h2>
+            <xsl:value-of select='.//title' />
+        </h2>
+        <input id='date' type='date' value='2020-01-01' /> <button on-tap='add7'>+7</button><br />
+
+        <br />
+        change title: <b contenteditable='true' on-tap='showAuthor'>
+            <xsl:value-of select='.//title' />
+        </b>
+    </xsl:template>
+</template>
+
+
+<style>
+    b {
+        font-size: 20px;
+    }
+
+    :host {
+        display: block;
+    }
+</style>
+
+<script>
+    import test from './import.js';
+    import './show-name.tag.js';
+    new class {
+        WATCH = ['id']
+
+        INIT() {
+            console.log('init', test);
+        }
+        showAuthor(node) {
+            console.log(node.innerText);
+        }
+        shadowChange(node, value) {
+            console.log('this changed:', node, value);
+        }
+        add7(node) {
+            let d = new Date(Date.parse(this.$('#date').value));
+            console.log(this.$('#date').value);
+            d.setDate(d.getDate() + 7);
+            console.log(d);
+            // this.$('#date').value = d;
+            this.$('#date').value = d.toISOString().substr(0, 10);
+            this.event('jo')
+            // this.$('#date').dispatchEvent(new Event('change'));
+        }
+        set id(v) { console.log('id', v) }
+    }
+</script>

@@ -1,0 +1,25 @@
+<template>
+    <xsl:template match='/'>
+        <i>
+            <xsl:value-of select='.//author/@first-name' />
+        </i> 
+
+        <b>
+            <xsl:value-of select='.//author' />
+        </b>
+    </xsl:template>
+</template>
+
+
+<style>
+    * {
+        font-family: Quicksand;
+    }
+</style>
+
+<script>
+    new class {
+        READY(){console.log('NAMES ready',this.innerHTML)}
+        // connectedCallback(){console.log('names connected',this.innerHTML)}
+    }
+</script>

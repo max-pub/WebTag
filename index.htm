@@ -1,0 +1,16 @@
+<body>
+    <script src='dist/demo-one.tag.js' type='module'></script>
+
+    <demo-one id='asdf'>
+        <author first-name='Hermann'>Hesse</author>
+        <title>Siddharta</title>
+    </demo-one>
+    <hr />
+    <demo-one id='b'></demo-one>
+
+    <script>
+        customElements.whenDefined('demo-one').then(x => {
+            document.querySelector('#b').data = `<book><author>Franz Kafka</author><title>Die Verwandlung</title></book>`;
+        })
+    </script>
+</body>
