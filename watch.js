@@ -12,11 +12,12 @@ FS.watch(watchFolder, { recursive: true },  (eventType, filename) => {
     let path = watchFolder + '/' + filename;
     if(Date.now() < lastChange[path] + 1000) return;
     lastChange[path] = Date.now();
-    console.log('\n\n\n\nchanged', filename);
+    console.log('\n\n\n\load: ', path);
 
     // console.log('go on with change');
     let tagName = PATH.basename(path).replace('.tag.htm', '');
     let targetFolder = watchFolder + '/dist/'+ PATH.dirname(filename) + '/';
+    console.log('save: ', targetFolder+tagName+'.tag.js');
 
     // console.log('target',targetFolder);
     let rawTag = FS.readFileSync(path, 'utf-8');
