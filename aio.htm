@@ -13,7 +13,7 @@ const XSL = new DOMParser().parseFromString(`<?xml version="1.0"?>
             <xsl:value-of select='.//title' />
         </h2>        
         <h3>
-            <xsl:value-of select='.//verlag' />
+            <xsl:value-of select='.//verlag/@name' />
         </h3>
         <input id='date' type='date' value='2020-01-01' /> <button on-tap='add7'>+7</button><br />
 
@@ -167,7 +167,7 @@ window.customElements.define('demo-one', class extends HTMLElement {
     <demo-one id='a'>
         <author first-name='Hermann'>Hesse</author>
         <title>Siddharta</title>
-        <verlag>rororo</verlag>
+        <verlag name='rororo'/>
     </demo-one>
     <hr />
     <demo-one id='b'></demo-one>
@@ -178,7 +178,7 @@ window.customElements.define('demo-one', class extends HTMLElement {
 
             document.querySelector('#a author').innerHTML = 'dude'
             setTimeout(()=>{
-                document.querySelector('#b').insertAdjacentHTML('beforeend',`<verlag>someone</verlag>`);
+                document.querySelector('#b').insertAdjacentHTML('beforeend',`<verlag name='someone'/>`);
 
             },1000);
         })
