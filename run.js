@@ -6,10 +6,11 @@ function convert(path) {
 	// console.log(path)
 	path = Deno.realPathSync(path);
 	if (!path.endsWith('.tag.htm')) return;
-	console.log('>>', path)
+	console.log(path)
 	const webTag = new WebTag();
 	webTag.parseFile(path);
 	let tag = webTag.makeTag();
+	console.log('-> ' + tag.length)
 	// console.log(tag);
 	Deno.writeTextFileSync(path.replace('.tag.htm', '.tag.js'), tag)
 }
