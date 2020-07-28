@@ -2,13 +2,14 @@
 import * as FS from 'fs';
 
 const RE = {
+	xslt: /^<xslt>([\s\S]*)^<\/xslt>/mi,
 	template: /^<template>([\s\S]*)^<\/template>/mi,
 	style: /^<style>([\s\S]*)^<\/style>/mi,
 	script: /^<script>([\s\S]*)^<\/script>/mi,
 	WATCH: /^\s*WATCH\s*\=\s*(.*)/m,
-	shadowChange: /^\s*shadowChange\s*\(/m,
+	viewChange: /^\s*viewChange\s*\(/m,
 	INIT: /^\s*(async)?\s*INIT\s*\(/m,
-	READY: /^\s*READY\s*\(/m,
+	READY: /^\s*(async)?\s*READY\s*\(/m,
 	TAP: /\son\-tap\s*\=/im,
 	ON_KEY: /\son\-key\s*\=/im,
 	EVENT: /\s*this\.event\s*\(/im,
@@ -33,7 +34,7 @@ export function parseTag(tag) {
 	// console.log('----------',tag.length,tag.split('\n'));
 
 	return {
-		template: getPart(tag, 'template'),
+		template: getPart(tag, 'xslt'),
 		style: getPart(tag, 'style'),
 		script: getPart(tag, 'script'),
 	}
@@ -48,14 +49,15 @@ function removeBlock(script, block) {
 
 
 
-const baseJS = FS.readFileSync('./lib/js.js', 'utf8');
+const baseJS = FS.readFileSync('./lib/template.js', 'utf8');
+
 export function makeScript(userJS, tagName, template) {
 	let frameJS = baseJS.replace('::TAGNAME::', tagName);
-
+	// console.log(userJS)
 	// console.log('FRAME', frameJS.length, userJS.length);
 	if (!userJS.match(RE.INIT)) frameJS = removeBlock(frameJS, 'INIT');
 	if (!userJS.match(RE.READY)) frameJS = removeBlock(frameJS, 'READY');
-	if (!userJS.match(RE.shadowChange)) frameJS = removeBlock(frameJS, 'shadowChange');
+	if (!userJS.match(RE.viewChange)) frameJS = removeBlock(frameJS, 'viewChange');
 	if (!userJS.match(RE.EVENT)) frameJS = removeBlock(frameJS, 'EVENT');
 	if (!userJS.match(RE.$)) frameJS = removeBlock(frameJS, '\\$1');
 	if (!userJS.match(RE.$$)) frameJS = removeBlock(frameJS, '\\$\\+');
@@ -80,27 +82,29 @@ export function makeScript(userJS, tagName, template) {
 
 export function makeStyle(style, type) {
 	let out = `document.createTextNode(\`${style}\`);`;
+	console.log(out)
 	if (type == 'ext') return 'export default ' + out;
 	if (type == 'int') return 'const CSS = ' + out;
 }
 export function makeTemplate(template, type) {
-	if (template.includes('<xsl:')) {
-		template = `<?xml version="1.0"?>\n<xsl:stylesheet version="1.0" xmlns="http://www.w3.org/1999/xhtml" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">\n` + template + `\n</xsl:stylesheet>\n`;
-		var out = `new DOMParser().parseFromString(\`${template}\`, 'text/xml');`;
-		if (type == 'ext') return 'export default ' + out;
-		if (type == 'int') return 'const XSL = ' + out;
-	} else {
-		var out = `new DOMParser().parseFromString(\`${template}\`, 'text/html');`;
-		if (type == 'ext') return 'export default ' + out;
-		if (type == 'int') return 'const HTM = ' + out;
-	}
+	// if (template.includes('<xsl:')) {
+	template = `<?xml version="1.0"?>\n<xsl:stylesheet version="1.0" xmlns="http://www.w3.org/1999/xhtml" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">\n` + template + `\n</xsl:stylesheet>\n`;
+	var out = `new DOMParser().parseFromString(\`${template}\`, 'text/xml');`;
+	// console.log(out);
+	if (type == 'ext') return 'export default ' + out;
+	if (type == 'int') return 'const XSLT = ' + out;
+	// } else {
+	// 	var out = `new DOMParser().parseFromString(\`${template}\`, 'text/html');`;
+	// 	if (type == 'ext') return 'export default ' + out;
+	// 	if (type == 'int') return 'const HTM = ' + out;
+	// }
 
 }
 // rawTag = `` + rawTag;
 
 export function makeOneTag(tagName, template, style, script) {
 	let output = makeScript(script, tagName, template);
-	output = output.replace('//tagXSLT//', makeTemplate(template, 'int'));
-	output = output.replace('//tagCSS//', makeStyle(style, 'int'));
+	output = output.replace('//::XSLT', makeTemplate(template, 'int'));
+	output = output.replace('//::CSS:', makeStyle(style, 'int'));
 	return output;
 }
