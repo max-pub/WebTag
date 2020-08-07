@@ -1,0 +1,33 @@
+<xsl>
+	<xsl:template match='*'>
+		<xsl:for-each select='book'>
+			<div>
+				<xsl:value-of select='author' />
+			</div>
+		</xsl:for-each>
+	</xsl:template>
+</xsl>
+
+<style>
+	div {
+		color: orange
+	}
+</style>
+
+
+<script>
+	class {
+		$onReady() {
+			let x = this._x('//book');
+			console.log('x', x);
+			let doc = new DOMParser().parseFromString(`	<books><book>
+		<author>max</author>
+	</book>
+	<book>
+		<author>tim</author>
+	</book></books>`, 'text/xml');
+
+			console.log('doc xpath', doc, doc.xpath('//book'))
+		}
+	}
+</script>
