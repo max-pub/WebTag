@@ -18,7 +18,8 @@ STYLE.appendChild(document.createTextNode(`div {
 		color: orange
 	}`));
 function xpath(root, node, query) {
-	let result = (root.evaluate(query, node, null, XPathResult.ANY_TYPE, null))
+	console.log('xpath', root, node, query);
+	let result = root.evaluate(query, node, null, XPathResult.ANY_TYPE, null)
 	switch (result.resultType) {
 		case 1: return result.numberValue;
 		case 2: return result.stringValue;
@@ -31,25 +32,32 @@ function xpath(root, node, query) {
 			return output;
 	}
 }
+function findParent(node, parentNames = []) {
+	while (!parentNames.includes(node.constructor.name)) {
+		node = node.parentNode;
+	}
+	return node;
+}
 XMLDocument.prototype.X = function (path) {
 	return xpath(this, this, path);
 }
 Element.prototype.X = function (path, options = {}) {
-	let node = this;
-	console.log('node',node.constructor.name)
-	while (node.constructor.name != 'XMLDocument') {
-		node = node.parentNode;
-		console.log('node',node.constructor.name)
+	let root = findParent(this, ['XMLDocument', 'HTMLDocument', 'ShadowRoot'])
+	if (root.constructor.name == 'ShadowRoot') {
+		let result = xpath(document, this.cloneNode(true), path);
+		let all = Array.from(root.querySelectorAll('*'));
+		return all.filter(x => result.filter(y => x.isEqualNode(y)).length)
+	} else {
+		return xpath(root, this, path);
 	}
-	return xpath(node, this, path);
 }
-Element.prototype.Q = function (selector) {
-	return this.querySelectorAll(selector);
+function QQ(query, i) {
+	let result = Array.from(this.querySelectorAll(query));
+	return i ? result?.[i - 1] : result;
 }
-HTMLElement.prototype.X = function (path, options = {}) {
-	console.log('xpath for',this,this.constructor.name,path)
-	return xpath(document, this, path)
-}
+Element.prototype.Q = QQ
+ShadowRoot.prototype.Q = QQ
+DocumentFragment.prototype.Q = QQ
 class WebTag extends HTMLElement {
 	constructor() {
 		super();
@@ -57,19 +65,19 @@ class WebTag extends HTMLElement {
 		this.shadowRoot.appendChild(STYLE.cloneNode(true)); //: CSS
 		this.$HTM = document.createElement('htm')
 		this.shadowRoot.appendChild(this.$HTM)
-		this.$viewUpdateCount = 0;
 	}
 	async connectedCallback() {
 		this.$attachMutationObservers();
 		this.$attachEventListeners();
-		await this.$update() //: XSLT
+		await this.$render() //: XSLT
 		this.$onReady(); //: onReady
 	}
 	$attachMutationObservers() {
 		this.modelObserver = new MutationObserver(events => {
 			if ((events[0].type == 'attributes') && (events[0].target == this)) {
 			} else {
-				if (this.$autoUpdate !== false) this.$update(events); //: XSLT
+				this.$onDataChange(events); //: $onDataChange
+				if (this.$autoUpdate !== false) this.$render(events); //: XSLT
 			}
 		}).observe(this, { attributes: true, characterData: true, attributeOldValue: true, childList: true, subtree: true });
 	}
@@ -80,7 +88,7 @@ class WebTag extends HTMLElement {
 				let action = target.closest(`[${key}]`);
 				this[action.getAttribute(key)](action, event, target)
 			}
-			catch  { }
+			catch { }
 		}
 	}
 	$clear(R) {
@@ -92,42 +100,38 @@ class WebTag extends HTMLElement {
 	}
 	set $view(HTML) {
 		this.$clear(this.$view);
+		if (typeof HTML == 'string')
+			HTML = new DOMParser().parseFromString(XML, 'text/html').firstChild
 		this.$view.appendChild(HTML);
 	}
-	get $data(){
+	get $data() {
 		return this;
 	}
-	set $model(XML) {
-		this.$clear(this);
-		this.appendChild(typeof XML == 'string' ? new DOMParser().parseFromString(XML, 'text/xml').firstChild : XML);
+	set $data(XML) {
+		this.$clear(this.$data);
+		if (typeof XML == 'string')
+			XML = new DOMParser().parseFromString(XML, 'text/xml').firstChild
+		this.appendChild(XML);
 	}
-	$update(events) {
-		const t0 = new Date().getTime();
+	$render(events) {
 		return new Promise((resolve, reject) => {
 			window.requestAnimationFrame(t => {
 				const t1 = new Date().getTime();
 				let xml = new DOMParser().parseFromString(new XMLSerializer().serializeToString(this).replace(/xmlns=".*?"/g, ''), 'text/xml'); // some platforms need to reparse the xml
 				let output = XSLP.transformToFragment(xml, document);
-				let oldRows = Array.from(this.shadowRoot.querySelectorAll('[keep]'))
-				let newRows = Array.from(output.querySelectorAll('[keep]'))
-				if (oldRows.length && newRows.length) {
-					for (let newRow of newRows) {
-						let eq = oldRows.filter(oldRow => oldRow.isEqualNode(newRow))
-						if (eq.length == 1) newRow.replaceWith(eq[0])
-					}
-				}
 				this.$view = output;
-				this.$viewUpdateCount++;
-				const t2 = new Date().getTime();
 				resolve()
 			});
 		});
 	}
 };
-	class mi_ni extends WebTag {
+class mi_ni extends WebTag {
 		$onReady() {
 			console.log('hi')
 			console.log('q view',this.$view.Q('div'))
+			console.log('q view',this.$view.Q('div',1))
+			console.log('q view',this.$view.Q('div',2))
+			console.log('q view',this.$view.Q('div',3))
 			console.log('q data',this.$data.Q('author'))
 			console.log(this.$view)
 			console.log('x data',this.$data.X('//author'))

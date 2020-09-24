@@ -6,3 +6,21 @@
 		<title>Siddharta</title>
 	</book>
 </mi-ni>
+
+<script>
+function res(result){
+	switch (result.resultType) {
+		case 1: return result.numberValue;
+		case 2: return result.stringValue;
+		case 3: return result.booleanValue;
+		default: // convert result to array
+			let output = [];
+			let node = null;
+			while (node = result.iterateNext())
+				output.push(node);
+			return output;
+	}
+}
+let x = new XPathEvaluator().createExpression('//div');
+res(x.evaluate(document, XPathResult.ANY_TYPE));
+</script>

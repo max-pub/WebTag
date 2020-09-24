@@ -18,6 +18,7 @@
 
 <script>
 	class {
+		///EBUG
 		$onReady() {
 	// 		let x = this._x('//book');
 	// 		console.log('x', x);
@@ -31,6 +32,9 @@
 			// console.log('doc xpath', doc, doc.xpath('//book'))
 			console.log('hi')
 			console.log('q view',this.$view.Q('div'))
+			console.log('q view',this.$view.Q('div',1))
+			console.log('q view',this.$view.Q('div',2))
+			console.log('q view',this.$view.Q('div',3))
 			console.log('q data',this.$data.Q('author'))
 			console.log(this.$view)
 			console.log('x data',this.$data.X('//author'))
