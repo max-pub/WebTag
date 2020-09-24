@@ -3,6 +3,7 @@
 		<xsl:for-each select='book'>
 			<div>
 				<xsl:value-of select='author' />
+				<div>name</div>
 			</div>
 		</xsl:for-each>
 	</xsl:template>
@@ -18,16 +19,22 @@
 <script>
 	class {
 		$onReady() {
-			let x = this._x('//book');
-			console.log('x', x);
-			let doc = new DOMParser().parseFromString(`	<books><book>
-		<author>max</author>
-	</book>
-	<book>
-		<author>tim</author>
-	</book></books>`, 'text/xml');
+	// 		let x = this._x('//book');
+	// 		console.log('x', x);
+	// 		let doc = new DOMParser().parseFromString(`	<books><book>
+	// 	<author>max</author>
+	// </book>
+	// <book>
+	// 	<author>tim</author>
+	// </book></books>`, 'text/xml');
 
-			console.log('doc xpath', doc, doc.xpath('//book'))
+			// console.log('doc xpath', doc, doc.xpath('//book'))
+			console.log('hi')
+			console.log('q view',this.$view.Q('div'))
+			console.log('q data',this.$data.Q('author'))
+			console.log(this.$view)
+			console.log('x data',this.$data.X('//author'))
+			console.log('x view',this.$view.X('//div'))
 		}
 	}
 </script>

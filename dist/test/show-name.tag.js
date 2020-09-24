@@ -1,4 +1,4 @@
-console.log('::TAGNAME::', import.meta.url);
+console.log('show-name', import.meta.url);
 
 
 //[ HTML
@@ -18,53 +18,16 @@ XSLP.importStylesheet(XSLT);
 
 //[ CSS
 let STYLE = document.createElement('style');
-STYLE.appendChild(document.createTextNode(`::CSS::`));
+STYLE.appendChild(document.createTextNode(`* {
+        font-family: Quicksand;
+    }`));
 //] CSS
 
 
-//[ XPATH
-function xpath(root, node, query) {
-	// console.log('xpath', root, node, query);
-	let result = (root.evaluate(query, node, null, XPathResult.ANY_TYPE, null))
-	switch (result.resultType) {
-		case 1: return result.numberValue;
-		case 2: return result.stringValue;
-		case 3: return result.booleanValue;
-		default: // convert result to array
-			let output = [];
-			let node = null;
-			while (node = result.iterateNext())
-				output.push(node);
-			return output;
-	}
-}
-XMLDocument.prototype.X = function (path) {
-	return xpath(this, this, path);
-}
-	// $x(q) { return xpath(document, this.shadowRoot.lastChild, q) } //: XPATH
-	// _x(q) { return xpath(document, this, q) } //: XPATH
-Element.prototype.X = function (path, options = {}) {
-	let node = this;
-	console.log('node',node.constructor.name)
-	while (node.constructor.name != 'XMLDocument') {
-		node = node.parentNode;
-		console.log('node',node.constructor.name)
-	}
-	// console.log('node', node);
-	return xpath(node, this, path);
-}
-
-//] XPATH
-Element.prototype.Q = function (selector) {
-	return this.querySelectorAll(selector);
-}
-HTMLElement.prototype.X = function (path, options = {}) {
-	console.log('xpath for',this,this.constructor.name,path)
-	return xpath(document, this, path)
-}
 
 
-//> IMPORTS
+
+new
 
 class WebTag extends HTMLElement {
 
@@ -77,7 +40,7 @@ class WebTag extends HTMLElement {
 		this.shadowRoot.appendChild(this.$HTM)
 		this.$viewUpdateCount = 0;
 
-		this.$onLoad(); //: onLoad
+
 	}
 
 
@@ -87,11 +50,11 @@ class WebTag extends HTMLElement {
 
 		this.$attachMutationObservers();
 		this.$attachEventListeners();
-		this.$onFrameChange();  //: onFrameChange
+
 
 		await this.$update() //: XSLT
 
-		this.$onReady(); //: onReady
+
 	}
 
 
@@ -100,24 +63,16 @@ class WebTag extends HTMLElement {
 		this.modelObserver = new MutationObserver(events => {
 			// console.log('model change', events, events[0].type, events[0].target, events[0].target == this)
 			if ((events[0].type == 'attributes') && (events[0].target == this)) {
-				//[ onFrameChange
-				this.$onFrameChange(
-					this.att,//Object.fromEntries(events.map(e => [e.attributeName, this.getAttribute(e.attributeName)])),
-					Object.fromEntries(events.map(e => [e.attributeName, e.oldValue]))
-				);
-				//] onFrameChange
+				
 			} else {
-				this.$onModelChange(events); //: $onModelChange
+
 				if (this.$autoUpdate !== false) this.$update(events); //: XSLT
 			}
 
 		}).observe(this, { attributes: true, characterData: true, attributeOldValue: true, childList: true, subtree: true });
 		//] XSLT
 
-		//[ onViewChange
-		this.viewObserver = new MutationObserver(events => this.$onViewChange(events))
-			.observe(this.shadowRoot, { attributes: true, attributeOldValue: true, characterData: true, childList: true, subtree: true });
-		//] onViewChange
+		
 
 	}
 	// window.addEventListener('load', () => this.applyXSLT());
@@ -137,12 +92,12 @@ class WebTag extends HTMLElement {
 		}
 
 
-		this.addEventListener('input', e => this.$onInputChange(e)); //: onInputChange
-		this.addEventListener('input', e => action(e, 'on-input')); //: onInput
-		this.addEventListener('click', e => action(e, 'on-tap')); //: onTap
-		this.addEventListener('keyup', e => action(e, 'on-key')); //: onKey
 
-		this.shadowRoot.addEventListener('slotchange', e => this.$onSlotChange(e)) //: onSlotChange
+
+
+
+
+
 	}
 	//]  on-tap  on-key  $onSlotChange
 
@@ -184,11 +139,8 @@ class WebTag extends HTMLElement {
 
 	//[ XSLT
 
-	// $clearModel() {
-	// 	this.$clear(this);
-	// }
-	get $data(){
-		return this;
+	$clearModel() {
+		this.$clear(this);
 	}
 	set $model(XML) {
 		// const t0 = new Date().getTime();
@@ -235,7 +187,7 @@ class WebTag extends HTMLElement {
 				this.$viewUpdateCount++;
 				// console.log('transformed', this);
 				const t2 = new Date().getTime();
-				// console.log(`view-update #${this.$viewUpdateCount}: ${t1 - t0}ms + ${t2 - t1}ms`, '::TAGNAME::')
+				// console.log(`view-update #${this.$viewUpdateCount}: ${t1 - t0}ms + ${t2 - t1}ms`, 'show-name')
 				resolve()
 			});
 		});
@@ -251,66 +203,35 @@ class WebTag extends HTMLElement {
 	// }
 
 
-	// $x(q) { return xpath(document, this.shadowRoot.lastChild, q) } //: XPATH
-	// _x(q) { return xpath(document, this, q) } //: XPATH
-
-	// $q(q) { return Array.from(this.shadowRoot.querySelectorAll(q)) } //: viewQSA  triple $ because of js replace...
-	// _q(q) { return Array.from(this.querySelectorAll(q)) } //: modelQSA
-
-	// $q1(q) { return this.shadowRoot.querySelector(q) } //: viewQS1
-	// _q1(q) { return this.querySelector(q) } //: modelQS1
-
-
-	//[ attr
-	get $a() {  // attributes
-		return new Proxy(
-			Object.fromEntries(Array.from(this.attributes).map(x => [x.nodeName, x.nodeValue])),
-			{
-				set: (target, key, value) => {
-					// console.log('SET', target, '.', key, '.', value);
-					this.setAttribute(key, value);
-					return Reflect.set(target, key, value);
-				}
-			}
-		)
-	}
-	//] attr
-
-
-	//[ event
-	$event(name, options) {
-		console.log('send EVENT', name, options)
-		this.dispatchEvent(new CustomEvent(name, {
-			bubbles: true,
-			composed: true,
-			cancelable: true,
-			detail: options
-		}));
-	}
-	//] event
 
 
 
-	//[ watch
-	static get observedAttributes() { return '::WATCH::'; }
-	attributeChangedCallback(name, oldValue, newValue) {
-		if (newValue != oldValue) this[name] = newValue
-		if (this.attTO) clearTimeout(this.attTO);
-		if (this.attributeChange) this.attTO = setTimeout(() => this.attributeChange(), 10);
-	}
-	//] watch
 
 
+
+
+
+
+
+	
+
+
+	
+
+
+
+	
+
+
+	//--------------------------------------------
+	//--------------------------------------------
+
+	
+        READY(){console.log('NAMES ready',this.innerHTML)}
+        // connectedCallback(){console.log('names connected',this.innerHTML)}
 
 };
 // console.log(WebTag)
-
-
-	//--------------------------------------------
-	//--------------------------------------------
-
-	//> SCRIPT
-
-window.customElements.define('::TAGNAME::', ::TAGCLASS::)
+window.customElements.define('show-name', WebTag)
 
 
