@@ -1,12 +1,12 @@
 import WebTag from './lib/make.js';
-const BASEFOLDER = Deno.realPathSync(Deno.args[0]);
+const BASEFOLDER = Deno.realPathSync(Deno.args[0]).replace(/\\/g,'/');
 var list = new Set();
 
 function convert(path) {
 	// console.log(path)
-	path = Deno.realPathSync(path);
+	path = Deno.realPathSync(path).replace(/\\/g,'/');
 	if (!path.endsWith('.tag.htm')) return;
-	console.log(path)
+	console.log('convert',path, BASEFOLDER)
 	const webTag = new WebTag();
 	webTag.parseFile(path);
 	let tag = webTag.makeTag();
